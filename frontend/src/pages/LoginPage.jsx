@@ -5,8 +5,8 @@ import { Building2, Lock, Mail, ArrowRight, GraduationCap, Briefcase, UserCircle
 import { motion } from 'framer-motion';
 
 const LoginPage = () => {
-    const [email, setEmail] = useState('student@school.com');
-    const [password, setPassword] = useState('password123');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const [role, setRole] = useState('student');
     const { login, loading } = useAuth();
     const [error, setError] = useState('');
