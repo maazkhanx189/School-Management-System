@@ -43,4 +43,17 @@ router.get('/students', authorize('administration'), (req, res, next) => {
     getUsers(req, res, next);
 });
 
+router.get('/staff', authorize('administration'), async (req, res, next) => {
+    try {
+        const User = require('../models/User');
+        const staff = await User.find({
+            schoolId: req.user.schoolId,
+            role: { $in: ['teacher', 'administration'] }
+        });
+        res.status(200).json({ success: true, data: staff });
+    } catch (err) {
+        next(err);
+    }
+});
+
 module.exports = router;

@@ -45,13 +45,14 @@ const AdministrationDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [fees, setFees] = useState([]);
     const [teachers, setTeachers] = useState([]);
+    const [staff, setStaff] = useState([]);
     const [students, setStudents] = useState([]);
     const [classes, setClasses] = useState([]);
 
     // Sync tab with URL
     useEffect(() => {
         const path = location.pathname;
-        if (path === '/administration/staff') setActiveTab('teachers');
+        if (path === '/administration/staff') setActiveTab('staff');
         else if (path === '/administration/finance') setActiveTab('fees');
         else if (path === '/administration/admission') setActiveTab('students');
         else if (path === '/administration') setActiveTab('fees'); // Default
@@ -59,7 +60,7 @@ const AdministrationDashboard = () => {
 
     const handleTabClick = (tabId) => {
         if (tabId === 'fees') navigate('/administration/finance');
-        else if (tabId === 'teachers') navigate('/administration/staff');
+        else if (tabId === 'staff') navigate('/administration/staff');
         else if (tabId === 'students') navigate('/administration/admission');
     };
 
@@ -69,6 +70,7 @@ const AdministrationDashboard = () => {
     const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
     const [isFeeModalOpen, setIsFeeModalOpen] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState(null);
+    const [selectedStudentForTask, setSelectedStudentForTask] = useState('');
 
     // Form states
     const [teacherForm, setTeacherForm] = useState({ name: '', email: '', password: '', department: '' });
@@ -79,14 +81,16 @@ const AdministrationDashboard = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [feeRes, teacherRes, studentRes, classRes] = await Promise.all([
+            const [feeRes, teacherRes, staffRes, studentRes, classRes] = await Promise.all([
                 api.get('/administration/fee-reports'),
                 api.get('/administration/teachers'),
+                api.get('/administration/staff'),
                 api.get('/administration/students'),
                 api.get('/admin/classes')
             ]);
             setFees(feeRes.data.data);
             setTeachers(teacherRes.data.data);
+            setStaff(staffRes.data.data);
             setStudents(studentRes.data.data);
             setClasses(classRes.data.data);
         } catch (error) {
@@ -144,6 +148,25 @@ const AdministrationDashboard = () => {
         }
     };
 
+    const filteredTeachersForTask = () => {
+        if (!selectedStudentForTask) return teachers;
+        const student = students.find(s => s._id === selectedStudentForTask);
+        if (!student || !student.classId) return teachers;
+
+        // Find class and its teacher
+        const studentClass = classes.find(c => c._id === (student.classId._id || student.classId));
+        if (studentClass && studentClass.teacherId) {
+            return teachers.filter(t => t._id === (studentClass.teacherId._id || studentClass.teacherId));
+        }
+        return teachers;
+    };
+
+    const getWeeklyAdmissions = () => {
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        return students.filter(s => new Date(s.createdAt) >= oneWeekAgo);
+    };
+
     if (loading) return (
         <div className="flex items-center justify-center min-h-[400px]">
             <Loader2 className="animate-spin text-primary-600" size={40} />
@@ -190,9 +213,9 @@ const AdministrationDashboard = () => {
                         <div className="p-3 rounded-2xl bg-indigo-50 text-indigo-600">
                             <Briefcase size={24} />
                         </div>
-                        <h3 className="text-slate-500 font-bold text-sm uppercase">Teachers</h3>
+                        <h3 className="text-slate-500 font-bold text-sm uppercase">Staff Count</h3>
                     </div>
-                    <p className="text-3xl font-bold text-slate-900">{teachers.length}</p>
+                    <p className="text-3xl font-bold text-slate-900">{staff.length}</p>
                 </div>
                 <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
                     <div className="flex items-center gap-4 mb-4">
@@ -202,7 +225,7 @@ const AdministrationDashboard = () => {
                         <h3 className="text-slate-500 font-bold text-sm uppercase">Revenue MTD</h3>
                     </div>
                     <p className="text-3xl font-bold text-slate-900">
-                        ${fees.reduce((sum, f) => sum + f.paidAmount, 0).toLocaleString()}
+                        ${fees.reduce((sum, f) => sum + (f.paidAmount || 0), 0).toLocaleString()}
                     </p>
                 </div>
             </div>
@@ -211,8 +234,8 @@ const AdministrationDashboard = () => {
                 <div className="flex items-center p-1 bg-slate-100 rounded-2xl w-fit">
                     {[
                         { id: 'fees', label: 'Finance', icon: CreditCard },
-                        { id: 'teachers', label: 'Teachers', icon: Briefcase },
-                        { id: 'students', label: 'Students', icon: GraduationCap },
+                        { id: 'staff', label: 'Staff Management', icon: Briefcase },
+                        { id: 'students', label: 'Admissions', icon: GraduationCap },
                     ].map((tab) => (
                         <button
                             key={tab.id}
@@ -271,22 +294,27 @@ const AdministrationDashboard = () => {
                         </div>
                     )}
 
-                    {activeTab === 'teachers' && (
+                    {activeTab === 'staff' && (
                         <div className="p-8">
                             <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-xl font-bold text-slate-900">Staff Members</h3>
+                                <h3 className="text-xl font-bold text-slate-900">All School Staff</h3>
                                 <button onClick={() => setIsTeacherModalOpen(true)} className="flex items-center gap-2 text-primary-600 font-bold hover:underline">
-                                    <Plus size={18} /> Add Teacher
+                                    <Plus size={18} /> Add Staff Member
                                 </button>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {teachers.map((t) => (
-                                    <div key={t._id} className="p-6 rounded-3xl border border-slate-100 bg-slate-50/50">
-                                        <div className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center text-primary-600 mb-4">
-                                            <Briefcase size={24} />
+                                {staff.map((s) => (
+                                    <div key={s._id} className="p-6 rounded-3xl border border-slate-100 bg-slate-50/50">
+                                        <div className="flex items-start justify-between">
+                                            <div className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center text-primary-600 mb-4">
+                                                <Briefcase size={24} />
+                                            </div>
+                                            <span className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase ${s.role === 'teacher' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'}`}>
+                                                {s.role}
+                                            </span>
                                         </div>
-                                        <h4 className="text-lg font-bold text-slate-900">{t.name}</h4>
-                                        <p className="text-slate-500 text-sm">{t.email}</p>
+                                        <h4 className="text-lg font-bold text-slate-900">{s.name}</h4>
+                                        <p className="text-slate-500 text-sm">{s.email}</p>
                                     </div>
                                 ))}
                             </div>
@@ -295,26 +323,63 @@ const AdministrationDashboard = () => {
 
                     {activeTab === 'students' && (
                         <div className="p-8">
-                            <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-xl font-bold text-slate-900">Student Directory</h3>
-                                <button onClick={() => setIsStudentModalOpen(true)} className="flex items-center gap-2 text-primary-600 font-bold hover:underline">
-                                    <Plus size={18} /> New Student
-                                </button>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {students.map((s) => (
-                                    <div key={s._id} className="p-6 rounded-3xl border border-slate-100 bg-slate-50/50">
-                                        <div className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center text-indigo-600 mb-4">
-                                            <GraduationCap size={24} />
-                                        </div>
-                                        <h4 className="text-lg font-bold text-slate-900">{s.name}</h4>
-                                        <p className="text-slate-500 text-sm">{s.email}</p>
-                                        <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-400">
-                                            <span>CLASS ID: {s.classId?._id?.substring(0, 8)}</span>
-                                            <ChevronRight size={16} />
-                                        </div>
+                            <div className="space-y-8">
+                                <div>
+                                    <div className="flex justify-between items-center mb-6">
+                                        <h3 className="text-xl font-bold text-slate-900">Weekly New Admissions 📅</h3>
+                                        <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-xs font-bold">
+                                            LAST 7 DAYS
+                                        </span>
                                     </div>
-                                ))}
+                                    {getWeeklyAdmissions().length > 0 ? (
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                            {getWeeklyAdmissions().map((s) => (
+                                                <div key={s._id} className="p-5 rounded-2xl border border-emerald-100 bg-emerald-50/20">
+                                                    <h4 className="font-bold text-slate-900">{s.name}</h4>
+                                                    <p className="text-xs text-slate-500">{s.email}</p>
+                                                    <p className="text-[10px] mt-2 font-bold text-emerald-600 uppercase">Enrolled: {new Date(s.createdAt).toLocaleDateString()}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-slate-400 text-sm italic">No new admissions this week.</p>
+                                    )}
+                                </div>
+
+                                <div className="pt-8 border-t border-slate-100">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <h3 className="text-xl font-bold text-slate-900">Full Student Directory</h3>
+                                        <button onClick={() => setIsStudentModalOpen(true)} className="flex items-center gap-2 text-primary-600 font-bold hover:underline">
+                                            <Plus size={18} /> New Student
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {students.map((s) => {
+                                            const studentFee = fees.find(f => (f.studentId?._id || f.studentId) === s._id);
+                                            return (
+                                                <div key={s._id} className="p-6 rounded-3xl border border-slate-100 bg-slate-50/50">
+                                                    <div className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center text-indigo-600 mb-4">
+                                                        <GraduationCap size={24} />
+                                                    </div>
+                                                    <h4 className="text-lg font-bold text-slate-900">{s.name}</h4>
+                                                    <p className="text-slate-500 text-sm">{s.email}</p>
+                                                    <div className="mt-4 pt-4 border-t border-slate-100 space-y-2">
+                                                        <div className="flex items-center justify-between text-xs font-bold">
+                                                            <span className="text-slate-400 uppercase">Class</span>
+                                                            <span className="text-slate-900">{s.classId?.name || 'N/A'}</span>
+                                                        </div>
+                                                        <div className="flex items-center justify-between text-xs font-bold">
+                                                            <span className="text-slate-400 uppercase">Fee Status</span>
+                                                            <span className={studentFee?.remainingAmount === 0 ? 'text-emerald-600' : 'text-rose-600'}>
+                                                                {studentFee ? (studentFee.remainingAmount === 0 ? 'Paid' : `$${studentFee.remainingAmount} Pending`) : 'N/A'}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -322,12 +387,16 @@ const AdministrationDashboard = () => {
             </div>
 
             {/* Modals */}
-            <Modal isOpen={isTeacherModalOpen} onClose={() => setIsTeacherModalOpen(false)} title="Add New Teacher">
+            <Modal isOpen={isTeacherModalOpen} onClose={() => setIsTeacherModalOpen(false)} title="Add Staff Member">
                 <form onSubmit={handleCreateTeacher} className="space-y-4">
                     <input className="input-field" placeholder="Full Name" required onChange={(e) => setTeacherForm({ ...teacherForm, name: e.target.value })} />
                     <input className="input-field" type="email" placeholder="Email" required onChange={(e) => setTeacherForm({ ...teacherForm, email: e.target.value })} />
                     <input className="input-field" type="password" placeholder="Temporary Password" required onChange={(e) => setTeacherForm({ ...teacherForm, password: e.target.value })} />
-                    <button type="submit" className="btn-primary w-full py-4 mt-4">Create Teacher Profile</button>
+                    <select className="input-field" onChange={(e) => setTeacherForm({ ...teacherForm, role: e.target.value })}>
+                        <option value="teacher">Teacher</option>
+                        <option value="administration">Administration</option>
+                    </select>
+                    <button type="submit" className="btn-primary w-full py-4 mt-4">Create Staff Profile</button>
                 </form>
             </Modal>
 
@@ -337,7 +406,7 @@ const AdministrationDashboard = () => {
                     <input className="input-field" type="email" placeholder="Email" required onChange={(e) => setStudentForm({ ...studentForm, email: e.target.value })} />
                     <input className="input-field" type="password" placeholder="Password" required onChange={(e) => setStudentForm({ ...studentForm, password: e.target.value })} />
                     <select className="input-field" required onChange={(e) => setStudentForm({ ...studentForm, classId: e.target.value })}>
-                        <option value="">Select Class</option>
+                        <option value="">Select Class (Playgroup to 10th)</option>
                         {classes.map(c => <option key={c._id} value={c._id}>{c.name} - {c.section}</option>)}
                     </select>
                     <input className="input-field" type="number" placeholder="Total Fee Amount" required onChange={(e) => setStudentForm({ ...studentForm, totalFee: e.target.value })} />
@@ -347,12 +416,23 @@ const AdministrationDashboard = () => {
 
             <Modal isOpen={isTaskModalOpen} onClose={() => setIsTaskModalOpen(false)} title="Assign Administrative Task">
                 <form onSubmit={handleAssignTask} className="space-y-4">
+                    <select
+                        className="input-field"
+                        onChange={(e) => setSelectedStudentForTask(e.target.value)}
+                        value={selectedStudentForTask}
+                    >
+                        <option value="">Select Student (Optional - Filter Teachers)</option>
+                        {students.map(s => <option key={s._id} value={s._id}>{s.name} ({s.classId?.name})</option>)}
+                    </select>
+
                     <input className="input-field" placeholder="Task Title" required onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })} />
                     <textarea className="input-field min-h-[100px]" placeholder="Detailed Description" required onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })} />
+
                     <select className="input-field" required onChange={(e) => setTaskForm({ ...taskForm, teacherId: e.target.value })}>
                         <option value="">Select Teacher</option>
-                        {teachers.map(t => <option key={t._id} value={t._id}>{t.name}</option>)}
+                        {filteredTeachersForTask().map(t => <option key={t._id} value={t._id}>{t.name}</option>)}
                     </select>
+
                     <button type="submit" className="btn-primary w-full py-4 mt-4 bg-slate-900 border-none">Assign Task</button>
                 </form>
             </Modal>
