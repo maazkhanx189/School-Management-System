@@ -63,23 +63,23 @@ const DashboardLayout = () => {
             case 'administration':
                 return [
                     { to: '/administration', icon: LayoutDashboard, label: 'Dashboard' },
-                    { to: '/staff', icon: Briefcase, label: 'Staff Management' },
-                    { to: '/finance', icon: CreditCard, label: 'Finance' },
-                    { to: '/admission', icon: GraduationCap, label: 'Admissions' },
+                    { to: '/administration/staff', icon: Briefcase, label: 'Staff Management' },
+                    { to: '/administration/finance', icon: CreditCard, label: 'Finance' },
+                    { to: '/administration/admission', icon: GraduationCap, label: 'Admissions' },
                 ];
             case 'admin':
                 return [
                     { to: '/admin', icon: LayoutDashboard, label: 'Insights' },
-                    { to: '/schools', icon: Building2, label: 'Schools' },
-                    { to: '/users', icon: Users, label: 'Users' },
-                    { to: '/settings', icon: Settings, label: 'System Settings' },
+                    { to: '/admin/schools', icon: Building2, label: 'Schools' },
+                    { to: '/admin/users', icon: Users, label: 'Users' },
+                    { to: '/admin/settings', icon: Settings, label: 'System Settings' },
                 ];
             case 'superadmin':
                 return [
                     { to: '/superadmin', icon: LayoutDashboard, label: 'Overview' },
-                    { to: '/schools', icon: Building2, label: 'Manage Schools' },
-                    { to: '/subscriptions', icon: CreditCard, label: 'Subscriptions' },
-                    { to: '/logs', icon: ClipboardList, label: 'Audit Logs' },
+                    { to: '/superadmin/schools', icon: Building2, label: 'Manage Schools' },
+                    { to: '/superadmin/subscriptions', icon: CreditCard, label: 'Subscriptions' },
+                    { to: '/superadmin/logs', icon: ClipboardList, label: 'Audit Logs' },
                 ];
             default:
                 return [];

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
     Users,
     CreditCard,
@@ -38,12 +39,29 @@ const Modal = ({ isOpen, onClose, title, children }) => {
 };
 
 const AdministrationDashboard = () => {
+    const navigate = useNavigate();
+    const location = useLocation();
     const [activeTab, setActiveTab] = useState('fees');
     const [loading, setLoading] = useState(true);
     const [fees, setFees] = useState([]);
     const [teachers, setTeachers] = useState([]);
     const [students, setStudents] = useState([]);
     const [classes, setClasses] = useState([]);
+
+    // Sync tab with URL
+    useEffect(() => {
+        const path = location.pathname;
+        if (path === '/administration/staff') setActiveTab('teachers');
+        else if (path === '/administration/finance') setActiveTab('fees');
+        else if (path === '/administration/admission') setActiveTab('students');
+        else if (path === '/administration') setActiveTab('fees'); // Default
+    }, [location]);
+
+    const handleTabClick = (tabId) => {
+        if (tabId === 'fees') navigate('/administration/finance');
+        else if (tabId === 'teachers') navigate('/administration/staff');
+        else if (tabId === 'students') navigate('/administration/admission');
+    };
 
     // Modals state
     const [isTeacherModalOpen, setIsTeacherModalOpen] = useState(false);
@@ -198,7 +216,7 @@ const AdministrationDashboard = () => {
                     ].map((tab) => (
                         <button
                             key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
+                            onClick={() => handleTabClick(tab.id)}
                             className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === tab.id ? 'bg-white text-primary-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
                         >
                             <tab.icon size={16} />

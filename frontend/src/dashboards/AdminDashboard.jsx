@@ -9,6 +9,7 @@ import {
     Filter,
     MoreHorizontal,
     Plus,
+    X,
     CreditCard,
     GraduationCap,
     Clock,
@@ -16,26 +17,62 @@ import {
 } from 'lucide-react';
 import api from '../api/axios';
 
+const Modal = ({ isOpen, onClose, title, children }) => {
+    if (!isOpen) return null;
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-white rounded-[2.5rem] p-8 w-full max-w-lg shadow-2xl relative"
+            >
+                <button onClick={onClose} className="absolute top-6 right-6 text-slate-400 hover:text-slate-600 transition-colors">
+                    <X size={24} />
+                </button>
+                <h3 className="text-2xl font-bold text-slate-900 mb-6">{title}</h3>
+                {children}
+            </motion.div>
+        </div>
+    );
+};
+
 const AdminDashboard = () => {
     const [analytics, setAnalytics] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
+    const [staffForm, setStaffForm] = useState({ name: '', email: '', password: '', role: 'teacher' });
+
+    const fetchAnalytics = async () => {
+        try {
+            const { data } = await api.get('/admin/analytics');
+            if (data.success) {
+                setAnalytics(data.data);
+            }
+        } catch (error) {
+            console.error('Error fetching analytics:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchAnalytics = async () => {
-            try {
-                const { data } = await api.get('/admin/analytics');
-                if (data.success) {
-                    setAnalytics(data.data);
-                }
-            } catch (error) {
-                console.error('Error fetching analytics:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchAnalytics();
     }, []);
+
+    const handleCreateStaff = async (e) => {
+        e.preventDefault();
+        try {
+            const { data } = await api.post('/admin/users', staffForm);
+            if (data.success) {
+                setIsStaffModalOpen(false);
+                setStaffForm({ name: '', email: '', password: '', role: 'teacher' });
+                alert('Staff member created successfully!');
+                fetchAnalytics();
+            }
+        } catch (error) {
+            alert(error.response?.data?.error || 'Failed to create staff');
+        }
+    };
 
     if (loading) return (
         <div className="flex items-center justify-center min-h-[400px]">
@@ -61,7 +98,10 @@ const AdminDashboard = () => {
                     <button className="flex items-center gap-2 px-6 py-3 bg-slate-100 text-slate-700 rounded-2xl font-bold hover:bg-slate-200 transition-all">
                         Generate Report
                     </button>
-                    <button className="flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-2xl font-bold hover:bg-primary-700 transition-all shadow-lg shadow-primary-100">
+                    <button
+                        onClick={() => setIsStaffModalOpen(true)}
+                        className="flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-2xl font-bold hover:bg-primary-700 transition-all shadow-lg shadow-primary-100"
+                    >
                         <Plus size={20} />
                         Create Staff
                     </button>
@@ -147,6 +187,57 @@ const AdminDashboard = () => {
                     </div>
                 </div>
             </div>
+
+            <Modal isOpen={isStaffModalOpen} onClose={() => setIsStaffModalOpen(false)} title="Create New Staff">
+                <form onSubmit={handleCreateStaff} className="space-y-4">
+                    <div className="space-y-2">
+                        <label className="text-sm font-bold text-slate-700 ml-1">Full Name</label>
+                        <input
+                            className="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:border-primary-500 outline-none transition-all"
+                            placeholder="John Doe"
+                            required
+                            value={staffForm.name}
+                            onChange={(e) => setStaffForm({ ...staffForm, name: e.target.value })}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-sm font-bold text-slate-700 ml-1">Email Address</label>
+                        <input
+                            className="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:border-primary-500 outline-none transition-all"
+                            type="email"
+                            placeholder="john@school.com"
+                            required
+                            value={staffForm.email}
+                            onChange={(e) => setStaffForm({ ...staffForm, email: e.target.value })}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-sm font-bold text-slate-700 ml-1">Temporary Password</label>
+                        <input
+                            className="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:border-primary-500 outline-none transition-all"
+                            type="password"
+                            placeholder="••••••••"
+                            required
+                            value={staffForm.password}
+                            onChange={(e) => setStaffForm({ ...staffForm, password: e.target.value })}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-sm font-bold text-slate-700 ml-1">Role</label>
+                        <select
+                            className="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:border-primary-500 outline-none transition-all appearance-none"
+                            value={staffForm.role}
+                            onChange={(e) => setStaffForm({ ...staffForm, role: e.target.value })}
+                        >
+                            <option value="teacher">Teacher</option>
+                            <option value="administration">Administrative Staff</option>
+                        </select>
+                    </div>
+                    <button type="submit" className="w-full py-4 bg-primary-600 text-white rounded-2xl font-bold mt-6 hover:bg-primary-700 shadow-lg shadow-primary-100 transition-all">
+                        Create Account
+                    </button>
+                </form>
+            </Modal>
         </div>
     );
 };
