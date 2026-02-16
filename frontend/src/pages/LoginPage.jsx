@@ -22,7 +22,6 @@ const LoginPage = () => {
 
     const roles = [
         { id: 'student', label: 'Student', icon: GraduationCap },
-        { id: 'teacher', label: 'Teacher', icon: Briefcase },
         { id: 'administration', label: 'Staff', icon: UserCircle },
         { id: 'admin', label: 'Admin', icon: Building2 },
     ];
@@ -47,7 +46,7 @@ const LoginPage = () => {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid grid-cols-4 gap-3 mb-4">
+                    <div className="grid grid-cols-3 gap-3 mb-4">
                         {roles.map((r) => (
                             <button
                                 key={r.id}

@@ -4,7 +4,8 @@ const {
     getTeacherHomework,
     getMyTasks,
     completeTask,
-    getMyClasses
+    getMyClasses,
+    getHomeworkSubmissions
 } = require('../controllers/teacherController');
 
 const { protect, authorize, tenantGate } = require('../middleware/auth');
@@ -20,6 +21,7 @@ router.route('/homework')
     .post(authorize('teacher'), assignHomework)
     .get(authorize('teacher'), getTeacherHomework);
 
+router.get('/homework/:homeworkId/submissions', authorize('teacher'), getHomeworkSubmissions);
 router.get('/tasks', authorize('teacher'), getMyTasks);
 router.put('/tasks/:id/complete', authorize('teacher'), completeTask);
 router.get('/classes', authorize('teacher'), getMyClasses);

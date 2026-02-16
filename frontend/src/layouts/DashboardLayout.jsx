@@ -16,7 +16,8 @@ import {
     ClipboardList,
     CreditCard,
     Building2,
-    Briefcase
+    Briefcase,
+    Clock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -66,6 +67,8 @@ const DashboardLayout = () => {
                     { to: '/administration/staff', icon: Briefcase, label: 'Staff Management' },
                     { to: '/administration/finance', icon: CreditCard, label: 'Finance' },
                     { to: '/administration/admission', icon: GraduationCap, label: 'Admissions' },
+                    { to: '/administration/classes', icon: Users, label: 'Classes' },
+                    { to: '/administration/attendance', icon: Clock, label: 'Attendance' },
                 ];
             case 'admin':
                 return [

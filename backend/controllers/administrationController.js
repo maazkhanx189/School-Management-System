@@ -2,6 +2,46 @@ const Task = require('../models/Task');
 const Fee = require('../models/Fee');
 const FeePayment = require('../models/FeePayment');
 const User = require('../models/User');
+const Attendance = require('../models/Attendance');
+
+// @desc    Get attendance reports
+// @route   GET /api/v1/administration/attendance-report
+// @access  Private (Administration)
+exports.getAttendanceReport = async (req, res, next) => {
+    try {
+        const attendance = await Attendance.find({ schoolId: req.user.schoolId })
+            .populate('userId', 'name role')
+            .populate('classId', 'name section')
+            .sort({ date: -1 });
+
+        // Calculate some stats
+        const stats = {
+            students: { present: 0, absent: 0, late: 0, total: 0 },
+            teachers: { present: 0, absent: 0, late: 0, total: 0 }
+        };
+
+        attendance.forEach(record => {
+            const roleKey = record.role === 'student' ? 'students' : 'teachers';
+            if (stats[roleKey]) {
+                stats[roleKey].total++;
+                if (record.status === 'present') stats[roleKey].present++;
+                else if (record.status === 'absent') stats[roleKey].absent++;
+                else if (record.status === 'late') stats[roleKey].late++;
+            }
+        });
+
+        res.status(200).json({
+            success: true,
+            data: {
+                records: attendance,
+                stats
+            }
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
 
 // @desc    Assign task to teacher
 // @route   POST /api/v1/administration/tasks

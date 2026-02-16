@@ -1,6 +1,7 @@
 const Homework = require('../models/Homework');
 const Task = require('../models/Task');
 const Class = require('../models/Class');
+const HomeworkSubmission = require('../models/HomeworkSubmission');
 
 // @desc    Assign homework to class
 // @route   POST /api/v1/teacher/homework
@@ -83,6 +84,35 @@ exports.getMyClasses = async (req, res, next) => {
     try {
         const classes = await Class.find({ teacherId: req.user.id, schoolId: req.user.schoolId });
         res.status(200).json({ success: true, data: classes });
+    } catch (err) {
+        next(err);
+    }
+};
+
+// @desc    Get homework submissions for a specific homework
+// @route   GET /api/v1/teacher/homework/:homeworkId/submissions
+// @access  Private (Teacher)
+exports.getHomeworkSubmissions = async (req, res, next) => {
+    try {
+        const { homeworkId } = req.params;
+
+        // Verify homework belongs to this teacher
+        const homework = await Homework.findOne({
+            _id: homeworkId,
+            teacherId: req.user.id,
+            schoolId: req.user.schoolId
+        });
+
+        if (!homework) {
+            return res.status(404).json({ success: false, error: 'Homework not found or not assigned by you' });
+        }
+
+        const submissions = await HomeworkSubmission.find({
+            homeworkId,
+            schoolId: req.user.schoolId
+        }).populate('studentId', 'name email').sort('-submittedAt');
+
+        res.status(200).json({ success: true, data: submissions });
     } catch (err) {
         next(err);
     }

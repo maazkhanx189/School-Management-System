@@ -2,11 +2,14 @@ const express = require('express');
 const {
     assignTask,
     recordFeePayment,
-    getFeeReports
+    getFeeReports,
+    getAttendanceReport
 } = require('../controllers/administrationController');
 const {
     createUser,
-    getUsers
+    getUsers,
+    updateUser,
+    deleteUser
 } = require('../controllers/adminController');
 
 const { protect, authorize, tenantGate } = require('../middleware/auth');
@@ -21,6 +24,7 @@ router.use(checkSubscription);
 router.post('/tasks', authorize('administration'), assignTask);
 router.post('/fees/:studentId/pay', authorize('administration'), recordFeePayment);
 router.get('/fee-reports', authorize('administration', 'admin'), getFeeReports);
+router.get('/attendance-report', authorize('administration'), getAttendanceReport);
 
 // User management for administration
 router.post('/create-teacher', authorize('administration'), (req, res, next) => {
@@ -42,6 +46,9 @@ router.get('/students', authorize('administration'), (req, res, next) => {
     req.query.role = 'student';
     getUsers(req, res, next);
 });
+
+router.put('/users/:id', authorize('administration'), updateUser);
+router.delete('/users/:id', authorize('administration'), deleteUser);
 
 router.get('/staff', authorize('administration'), async (req, res, next) => {
     try {

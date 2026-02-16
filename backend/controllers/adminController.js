@@ -86,6 +86,18 @@ exports.createClass = async (req, res, next) => {
     }
 };
 
+// @desc    Get all classes of the school
+// @route   GET /api/v1/admin/classes
+// @access  Private (Admin, Administration, Teacher)
+exports.getClasses = async (req, res, next) => {
+    try {
+        const classes = await Class.find({ schoolId: req.user.schoolId }).populate('teacherId', 'name');
+        res.status(200).json({ success: true, data: classes });
+    } catch (err) {
+        next(err);
+    }
+};
+
 // @desc    Get school analytics (Admin Only)
 // @route   GET /api/v1/admin/analytics
 // @access  Private (Admin)
@@ -118,6 +130,70 @@ exports.getAnalytics = async (req, res, next) => {
                 fees: feeData[0] || { totalExpected: 0, totalPaid: 0, totalRemaining: 0 }
             }
         });
+    } catch (err) {
+        next(err);
+    }
+};
+// @desc    Update a user
+// @route   PUT /api/v1/admin/users/:id
+// @access  Private (Admin, Administration)
+exports.updateUser = async (req, res, next) => {
+    try {
+        let user = await User.findOne({ _id: req.params.id, schoolId: req.user.schoolId });
+
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+
+        // Restriction: Administration cannot update other Administration/Admin
+        if (req.user.role === 'administration' && (user.role === 'administration' || user.role === 'admin')) {
+            return res.status(403).json({ success: false, error: 'Not authorized to update this user' });
+        }
+
+        // If classId is updated for a student
+        if (user.role === 'student' && req.body.classId) {
+            // Logic could be added here to update fee or other class-specific data if needed
+        }
+
+        user = await User.findByIdAndUpdate(req.params.id, req.body, {
+            new: true,
+            runValidators: true
+        });
+
+        await logActivity(req.user.id, `Updated ${user.role}: ${user.email}`, 'User Management', req.user.schoolId);
+
+        res.status(200).json({ success: true, data: user });
+    } catch (err) {
+        next(err);
+    }
+};
+
+// @desc    Delete a user
+// @route   DELETE /api/v1/admin/users/:id
+// @access  Private (Admin, Administration)
+exports.deleteUser = async (req, res, next) => {
+    try {
+        const user = await User.findOne({ _id: req.params.id, schoolId: req.user.schoolId });
+
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+
+        // Restriction same as update
+        if (req.user.role === 'administration' && (user.role === 'administration' || user.role === 'admin')) {
+            return res.status(403).json({ success: false, error: 'Not authorized to delete this user' });
+        }
+
+        // If student, delete associated fees
+        if (user.role === 'student') {
+            await Fee.deleteMany({ studentId: user._id });
+        }
+
+        await user.deleteOne();
+
+        await logActivity(req.user.id, `Deleted ${user.role}: ${user.email}`, 'User Management', req.user.schoolId);
+
+        res.status(200).json({ success: true, data: {} });
     } catch (err) {
         next(err);
     }

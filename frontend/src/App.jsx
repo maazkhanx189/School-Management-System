@@ -39,14 +39,22 @@ const AppRoutes = () => {
 
       <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
         <Route path="/student" element={<ProtectedRoute allowedRoles={['student']}><StudentDashboard /></ProtectedRoute>} />
+        <Route path="/homework" element={<ProtectedRoute allowedRoles={['student']}><StudentDashboard /></ProtectedRoute>} />
+        <Route path="/fees" element={<ProtectedRoute allowedRoles={['student']}><StudentDashboard /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute allowedRoles={['student']}><StudentDashboard /></ProtectedRoute>} />
 
         <Route path="/teacher" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherDashboard /></ProtectedRoute>} />
+        <Route path="/classes" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherDashboard /></ProtectedRoute>} />
+        <Route path="/assignments" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherDashboard /></ProtectedRoute>} />
+        <Route path="/attendance" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherDashboard /></ProtectedRoute>} />
 
         {/* Administration Routes */}
         <Route path="/administration" element={<ProtectedRoute allowedRoles={['administration']}><AdministrationDashboard /></ProtectedRoute>} />
         <Route path="/administration/staff" element={<ProtectedRoute allowedRoles={['administration']}><AdministrationDashboard /></ProtectedRoute>} />
         <Route path="/administration/finance" element={<ProtectedRoute allowedRoles={['administration']}><AdministrationDashboard /></ProtectedRoute>} />
         <Route path="/administration/admission" element={<ProtectedRoute allowedRoles={['administration']}><AdministrationDashboard /></ProtectedRoute>} />
+        <Route path="/administration/classes" element={<ProtectedRoute allowedRoles={['administration']}><AdministrationDashboard /></ProtectedRoute>} />
+        <Route path="/administration/attendance" element={<ProtectedRoute allowedRoles={['administration']}><AdministrationDashboard /></ProtectedRoute>} />
 
         {/* Admin Routes */}
         <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
